@@ -268,6 +268,9 @@ minimap buffer."
             ;; kill existing buffer if there is one
             (when (string-match minimap-buffer-name-prefix
                                 (buffer-name (current-buffer)))
+              
+              (when minimap-dedicated-window
+                (set-window-dedicated-p minimap-window nil))
               (kill-buffer)))
         ;; otherwise split current window
         (unless (split-window-horizontally
@@ -280,6 +283,8 @@ minimap buffer."
       
       ;;; BUFFER CREATION
       (select-window minimap-window)
+      (when minimap-dedicated-window
+        (set-window-dedicated-p minimap-window nil))
       ;; if minimap buffer exists
       (if (get-buffer buffer_name)
           ;; show it
@@ -325,7 +330,7 @@ minimap buffer."
       (when minimap-hide-fringes
         (set-window-fringes nil 0 0))
       (when minimap-dedicated-window
-        (set-window-dedicated-p nil t))
+        (set-window-dedicated-p nil 1))
       ;; Calculate the actual number of lines displayable with the minimap face.
       
       (setq minimap-numlines
