@@ -94,6 +94,11 @@ By default, this is only a different background color."
              :height 1.9 :background "gray90")))
   "Face used for types in the semantic overlay.")
 
+(defcustom minimap-dedicated-window t
+  "Whether the minimap should create a dedicated window."
+  :type 'boolean
+  :group 'minimap)
+
 (defcustom minimap-width-fraction 0.1
   "Fraction of width which should be used for minimap sidebar."
   :type 'number
@@ -228,6 +233,14 @@ minimap buffer."
 (make-variable-buffer-local 'minimap-numlines)
 (make-variable-buffer-local 'minimap-pointmin-overlay)
 
+(defun minimap-toggle ()
+  "Toggle the minimap."
+  (interactive)
+  (if (and minimap-window
+           (window-live-p minimap-window))
+      (minimap-kill)
+    (minimap-create)))
+
 (defun minimap-buffer-name()
   "Get minimap buffer name for current buffer"
   (concat minimap-buffer-name-prefix " " (buffer-name (current-buffer))))
@@ -282,14 +295,6 @@ minimap buffer."
         (select-window original_window))
       (minimap-sync-overlays))))
 
-(defun minimap-toggle ()
-  "Toggle the minimap."
-  (interactive)
-  (if (and minimap-window
-           (window-live-p minimap-window))
-      (minimap-kill)
-    (minimap-create)))
-
 (defun minimap-new-minimap (buffer_name target_buffer)
   "Create new minimap indirect-buffer pointing to target"
   (unless (or (string-match minimap-buffer-name-prefix (buffer-name target_buffer))
@@ -319,6 +324,8 @@ minimap buffer."
         (linum-mode 0))
       (when minimap-hide-fringes
         (set-window-fringes nil 0 0))
+      (when minimap-dedicated-window
+        (set-window-dedicated-p nil t))
       ;; Calculate the actual number of lines displayable with the minimap face.
       
       (setq minimap-numlines
