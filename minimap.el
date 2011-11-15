@@ -298,7 +298,9 @@ minimap buffer."
       (if was_created
           (other-window 1)
         (select-window original_window))
-      (minimap-sync-overlays))))
+      (minimap-sync-overlays)
+      (when minimap-dedicated-window
+        (set-window-dedicated-p minimap-window 1)))))
 
 (defun minimap-new-minimap (buffer_name target_buffer)
   "Create new minimap indirect-buffer pointing to target"
@@ -329,8 +331,6 @@ minimap buffer."
         (linum-mode 0))
       (when minimap-hide-fringes
         (set-window-fringes nil 0 0))
-      (when minimap-dedicated-window
-        (set-window-dedicated-p nil 1))
       ;; Calculate the actual number of lines displayable with the minimap face.
       
       (setq minimap-numlines
@@ -347,10 +347,12 @@ Cancel the idle timer if no more minimaps are active."
   (if (null minimap-window)
       (message "No minimap window found.")
     ;; kill all minimap buffers
+    (set-window-dedicated-p minimap-window nil)
     (dolist (ele (buffer-list))
       (when (string-match minimap-buffer-name-prefix (buffer-name ele))
         (kill-buffer ele)))
     (delete-window minimap-window)
+    (setq minimap-window nil)
     (when minimap-timer-object
       (cancel-timer minimap-timer-object)
       (setq minimap-timer-object nil))
@@ -370,6 +372,7 @@ Cancel the idle timer if no more minimaps are active."
   (when (and minimap-window
              (window-live-p minimap-window)
              (minimap-valid-target))
+    (set-window-dedicated-p minimap-window nil)
     (let (start end pt ov)
       (unless (get-buffer (minimap-buffer-name))
         (minimap-create))
@@ -391,7 +394,9 @@ Cancel the idle timer if no more minimaps are active."
                                2)))
         (goto-char pt)
         (when minimap-always-recenter
-          (recenter (round (/ (window-height) 2))))))))
+          (recenter (round (/ (window-height) 2))))
+        (when minimap-dedicated-window
+          (set-window-dedicated-p minimap-window 1))))))
 
 ;;; Overlay movement
 (defun minimap-move-overlay-mouse (start-event)
@@ -542,6 +547,7 @@ Apply semantic overlays or face enlargement if necessary."
         (semantic (and (boundp 'semantic-version)
                        (semantic-active-p)))
         ov props p)
+    (set-window-dedicated-p minimap-window nil)
     (with-current-buffer (minimap-buffer-name)
       (remove-overlays)
       (while baseov
